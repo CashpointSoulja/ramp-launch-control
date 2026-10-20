@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+    branches: [main, 'build/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run evals
+      - run: npm run build
+      - run: npx wrangler deploy --dry-run --outdir .wrangler/dry
+      - run: npx playwright install --with-deps chromium
+      - name: API and UI checks against local Worker
+        run: |
+          npx wrangler dev --port 8787 > wrangler.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8787/api/health && break; sleep 2; done
+          npm run test:api
+          npm run ui:check

@@ -4,3 +4,4 @@ dist/
 .dev.vars
 test-results/
 *.log
+dist-static/
